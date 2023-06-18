@@ -22,7 +22,10 @@ select
 	cv.combin_Name,--组合项目名称
 	cv.pkcombin_id as combin_ID,--组合项目代码
 	cv.printorder,--显示顺序
-	cc.unid as REPORT_NO--报告单编号
+	cc.unid as REPORT_NO,--报告单编号
+	cc.patientname,--姓名
+	cc.sex,--性别
+	cc.age--年龄
 from chk_con cc,chk_valu cv
 where cc.unid=cv.pkunid
 AND ISNULL(cc.report_doctor,'')<>''
@@ -43,7 +46,10 @@ select
 	cv.combin_Name,--组合项目名称
 	cv.pkcombin_id as combin_ID,--组合项目代码
 	cv.printorder,--显示顺序
-	cc.unid as REPORT_NO--报告单编号
+	cc.unid as REPORT_NO,--报告单编号
+	cc.patientname,--姓名
+	cc.sex,--性别
+	cc.age--年龄
 from chk_con_bak cc WITH(NOLOCK),chk_valu_bak cv WITH(NOLOCK)
 where cc.unid=cv.pkunid
 and isnull(cv.itemvalue,'')<>''
@@ -57,4 +63,3 @@ GO
 
 sp_refreshview  'dbo.view_LIS_RESULT_PCX'
 GO
-
