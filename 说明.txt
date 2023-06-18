@@ -1,0 +1,60 @@
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[view_LIS_RESULT_PCX]') and OBJECTPROPERTY(id, N'IsView') = 1)
+drop view [dbo].[view_LIS_RESULT_PCX]
+GO
+
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
+GO
+
+CREATE VIEW view_LIS_RESULT_PCX
+AS
+--LIS提供给鹏成信HIS的结果视图
+select	
+	cv.itemid,--子项目代码
+	CV.Name as ITEM_NAME,--子项目名称
+	cv.itemvalue,--检验结果
+	isnull(dbo.uf_Reference_Value_B1(cv.min_value,cv.max_value),'')+isnull(dbo.uf_Reference_Value_B2(cv.min_value,cv.max_value),'') as REF_RANGE,--参考范围
+	cv.unit,--结果单位
+	case dbo.uf_ValueAlarm(cv.itemid,cv.Min_value,cv.Max_value,cv.itemvalue) when 1 then 'L' WHEN 2 THEN 'H' ELSE 'N' END as RESULT_STATE_DESC,--异常结果状态显示
+	cc.Audit_Date,--报告时间
+	cc.report_doctor,--报告人
+	cv.combin_Name,--组合项目名称
+	cv.pkcombin_id as combin_ID,--组合项目代码
+	cv.printorder,--显示顺序
+	cc.unid as REPORT_NO--报告单编号
+from chk_con cc,chk_valu cv
+where cc.unid=cv.pkunid
+AND ISNULL(cc.report_doctor,'')<>''
+and cv.issure='1'
+and isnull(cv.itemvalue,'')<>''
+
+union all
+
+select	
+	cv.itemid,--子项目代码
+	CV.Name as ITEM_NAME,--子项目名称
+	cv.itemvalue,--检验结果
+	isnull(dbo.uf_Reference_Value_B1(cv.min_value,cv.max_value),'')+isnull(dbo.uf_Reference_Value_B2(cv.min_value,cv.max_value),'') as REF_RANGE,--参考范围
+	cv.unit,--结果单位
+	case dbo.uf_ValueAlarm(cv.itemid,cv.Min_value,cv.Max_value,cv.itemvalue) when 1 then 'L' WHEN 2 THEN 'H' ELSE 'N' END as RESULT_STATE_DESC,--异常结果状态显示
+	cc.Audit_Date,--报告时间
+	cc.report_doctor,--报告人
+	cv.combin_Name,--组合项目名称
+	cv.pkcombin_id as combin_ID,--组合项目代码
+	cv.printorder,--显示顺序
+	cc.unid as REPORT_NO--报告单编号
+from chk_con_bak cc WITH(NOLOCK),chk_valu_bak cv WITH(NOLOCK)
+where cc.unid=cv.pkunid
+and isnull(cv.itemvalue,'')<>''
+and cc.check_date>getdate()-180
+
+GO
+SET QUOTED_IDENTIFIER OFF 
+GO
+SET ANSI_NULLS ON 
+GO
+
+sp_refreshview  'dbo.view_LIS_RESULT_PCX'
+GO
+
