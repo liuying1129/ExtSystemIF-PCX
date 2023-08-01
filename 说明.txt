@@ -22,6 +22,7 @@ select
 	cv.combin_Name,--组合项目名称
 	cv.pkcombin_id as combin_ID,--组合项目代码
 	cv.printorder,--显示顺序
+                cc.TjJianYan as BARCODE,--条码号
 	cc.unid as REPORT_NO,--报告单编号
 	cc.patientname,--姓名
 	cc.sex,--性别
@@ -46,6 +47,7 @@ select
 	cv.combin_Name,--组合项目名称
 	cv.pkcombin_id as combin_ID,--组合项目代码
 	cv.printorder,--显示顺序
+                cc.TjJianYan as BARCODE,--条码号
 	cc.unid as REPORT_NO,--报告单编号
 	cc.patientname,--姓名
 	cc.sex,--性别
