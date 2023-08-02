@@ -6,7 +6,8 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, DB, Grids, DBGrids,
   Buttons, ADODB,IniFiles,StrUtils, VirtualTable,
-  ActnList, DosMove, ComCtrls, MemDS;
+  ActnList, DosMove, ComCtrls, MemDS, DBGridEhGrouping, ToolCtrlsEh,
+  DBGridEhToolCtrls, DynVarsEh, GridsEh, DBAxisGridsEh, DBGridEh;
 
 //==为了通过发送消息更新主窗体状态栏而增加==//
 const
@@ -35,7 +36,6 @@ type
     LabeledEdit11: TLabeledEdit;
     Edit2: TEdit;
     Panel4: TPanel;
-    DBGrid1: TDBGrid;
     BitBtn1: TBitBtn;
     Label1: TLabel;
     ActionList1: TActionList;
@@ -45,6 +45,8 @@ type
     Memo1: TMemo;
     StatusBar1: TStatusBar;
     UniConnection1: TADOConnection;
+    LabeledEdit9: TLabeledEdit;
+    DBGrid1: TDBGridEh;
     procedure LabeledEdit1KeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure FormCreate(Sender: TObject);
@@ -98,7 +100,7 @@ var
 
   i:Integer;
 
-  VTTemp:TVirtualTable;
+  OldCurrent:TBookmark;
 
   ini:TIniFile;
 
@@ -132,7 +134,10 @@ begin
   LabeledEdit6.Text:=UniQryTemp22.fieldbyname('开单医生').AsString;
   LabeledEdit7.Text:=UniQryTemp22.fieldbyname('条码').AsString;
   LabeledEdit8.Text:=FormatDateTime('yyyy-mm-dd hh:nn:ss',UniQryTemp22.fieldbyname('开单时间').AsDateTime);
-  //LabeledEdit11.Text:=UniQryTemp22.fieldbyname('REG_ID').AsString;
+  if UniQryTemp22.fieldbyname('患者类别').AsString='住院' then LabeledEdit11.Text:=UniQryTemp22.fieldbyname('住院号').AsString
+    else if UniQryTemp22.fieldbyname('患者类别').AsString='体检' then LabeledEdit11.Text:=UniQryTemp22.fieldbyname('体检号').AsString
+      else LabeledEdit11.Text:=''; 
+  LabeledEdit9.Text:=UniQryTemp22.fieldbyname('患者类别').AsString;
 
   VirtualTable1.Clear;
   for i:=0 to (DBGrid1.columns.count-1) do DBGrid1.columns[i].readonly:=False;
@@ -147,11 +152,11 @@ begin
                         'from combinitem ci,HisCombItem hci '+
                         'where ci.Unid=hci.CombUnid and hci.ExtSystemId=''HIS'' '+
                         'and hci.HisItem=:HisItem';
-    ADOTemp22.Parameters.ParamByName('HisItem').Value:=UniQryTemp22.fieldbyname('检验组合项目代码').AsString;
+    ADOTemp22.Parameters.ParamByName('HisItem').Value:=UniQryTemp22.fieldbyname('HIS检验组合项目代码').AsString;
     ADOTemp22.Open;
 
     //LIS中没有相对应的项目
-    if ADOTemp22.RecordCount<=0 then Memo1.Lines.Add(UniQryTemp22.fieldbyname('检验组合项目代码').AsString+'【'+UniQryTemp22.fieldbyname('HIS检验组合项目名称').AsString+'】在LIS中没有对照'); 
+    if ADOTemp22.RecordCount<=0 then Memo1.Lines.Add(UniQryTemp22.fieldbyname('HIS检验组合项目代码').AsString+'【'+UniQryTemp22.fieldbyname('HIS检验组合项目名称').AsString+'】在LIS中没有对照'); 
 
     while not ADOTemp22.Eof do
     begin
@@ -170,7 +175,7 @@ begin
 
       VirtualTable1.Append;
       VirtualTable1.FieldByName('外部系统项目申请编号').AsString:='';//UniQryTemp22.FieldByName('REQUEST_NO').AsString;
-      VirtualTable1.FieldByName('HIS项目代码').AsString:=UniQryTemp22.FieldByName('检验组合项目代码').AsString;
+      VirtualTable1.FieldByName('HIS项目代码').AsString:=UniQryTemp22.FieldByName('HIS检验组合项目代码').AsString;
       VirtualTable1.FieldByName('HIS项目名称').AsString:=UniQryTemp22.FieldByName('HIS检验组合项目名称').AsString;
       VirtualTable1.FieldByName('LIS项目代码').AsString:=ADOTemp22.FieldByName('Id').AsString;
       VirtualTable1.FieldByName('LIS项目名称').AsString:=ADOTemp22.FieldByName('Name').AsString;
@@ -189,15 +194,22 @@ begin
 
   for i:=0 to (DBGrid1.columns.count-2) do DBGrid1.columns[i].readonly:=True;//仅保留最后1列(联机号)可编辑
 
+  //Grid全选方式二 begin
+  DBGrid1.Selection.Rows.SelectAll;
+  //Grid全选方式二 end
+
   if CheckBox1.Checked then
   begin
-    VTTemp:=TVirtualTable.Create(nil);
-    VTTemp.Assign(VirtualTable1);//clone数据集
-    VTTemp.Open;
-    while not VTTemp.Eof do
+    //Grid勾选记录判断方式二 begin
+    //该方式无需循环全部数据集,只需循环所选记录
+    OldCurrent:=DBGrid1.DataSource.DataSet.GetBookmark;
+    DBGrid1.DataSource.DataSet.DisableControls;
+    for i:=0 to DBGrid1.SelectedRows.Count-1 do
     begin
+      DBGrid1.DataSource.DataSet.Bookmark:=DBGrid1.SelectedRows[i];
+
       SingleRequestForm2Lis(
-        VTTemp.fieldbyname('工作组').AsString,
+        DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,
         LabeledEdit11.Text,
         LabeledEdit2.Text,
         LabeledEdit3.Text,
@@ -207,29 +219,28 @@ begin
         LabeledEdit6.Text,
         LabeledEdit8.Text,
         LabeledEdit7.Text,
-        VTTemp.fieldbyname('外部系统项目申请编号').AsString,
-        VTTemp.fieldbyname('联机号').AsString,
-        VTTemp.fieldbyname('样本类型').AsString,
-        VTTemp.fieldbyname('LIS项目代码').AsString,
-        '',
+        DBGrid1.DataSource.DataSet.fieldbyname('外部系统项目申请编号').AsString,
+        DBGrid1.DataSource.DataSet.fieldbyname('联机号').AsString,
+        DBGrid1.DataSource.DataSet.fieldbyname('样本类型').AsString,
+        DBGrid1.DataSource.DataSet.fieldbyname('LIS项目代码').AsString,
+        LabeledEdit9.Text,
         operator_name
       );
 
       //保存当前联机号
-      if (trim(VTTemp.fieldbyname('工作组').AsString)<>'')and(VTTemp.fieldbyname('工作组').AsString<>PreWorkGroup) then
+      if (trim(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString)<>'')and(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString<>PreWorkGroup) then
       begin
-        PreWorkGroup:=VTTemp.fieldbyname('工作组').AsString;
+        PreWorkGroup:=DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString;
         ini:=tinifile.Create(ChangeFileExt(Application.ExeName,'.ini'));
-        ini.WriteString(VTTemp.fieldbyname('工作组').AsString,'检查日期',FormatDateTime('YYYY-MM-DD',Date));
-        ini.WriteString(VTTemp.fieldbyname('工作组').AsString,'联机号',VTTemp.fieldbyname('联机号').AsString);
+        ini.WriteString(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,'检查日期',FormatDateTime('YYYY-MM-DD',Date));
+        ini.WriteString(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,'联机号',DBGrid1.DataSource.DataSet.fieldbyname('联机号').AsString);
         ini.Free;
       end;
       //==============
-
-      VTTemp.Next;
     end;
-    VTTemp.Close;
-    VTTemp.Free;
+    DBGrid1.DataSource.DataSet.GotoBookmark(OldCurrent);
+    DBGrid1.DataSource.DataSet.EnableControls;
+    //Grid勾选记录判断方式二 end}
   end;
 
   (Sender as TLabeledEdit).Enabled:=true;
@@ -385,7 +396,8 @@ end;
 
 procedure TfrmMain.BitBtn1Click(Sender: TObject);
 var
-  VTTemp:TVirtualTable;
+  OldCurrent:TBookmark;
+  i:integer;
   ini:TIniFile;
 
   PreWorkGroup:String;//该变量作用:仅保存工作组第一条记录的联机号
@@ -398,13 +410,16 @@ begin
   LabeledEdit1.Enabled:=false;//为了防止没处理完又扫描下一个条码
   BitBtn1.Enabled:=false;//为了防止没处理完又点击导入//因定义了ShortCut,故不能使用(Sender as TBitBtn)
 
-  VTTemp:=TVirtualTable.Create(nil);
-  VTTemp.Assign(VirtualTable1);//clone数据集
-  VTTemp.Open;
-  while not VTTemp.Eof do
+  //Grid勾选记录判断方式二 begin
+  //该方式无需循环全部数据集,只需循环所选记录
+  OldCurrent:=DBGrid1.DataSource.DataSet.GetBookmark;
+  DBGrid1.DataSource.DataSet.DisableControls;
+  for i:=0 to DBGrid1.SelectedRows.Count-1 do
   begin
+    DBGrid1.DataSource.DataSet.Bookmark:=DBGrid1.SelectedRows[i];
+
     SingleRequestForm2Lis(
-      VTTemp.fieldbyname('工作组').AsString,
+      DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,
       LabeledEdit11.Text,
       LabeledEdit2.Text,
       LabeledEdit3.Text,
@@ -414,29 +429,28 @@ begin
       LabeledEdit6.Text,
       LabeledEdit8.Text,
       LabeledEdit7.Text,
-      VTTemp.fieldbyname('外部系统项目申请编号').AsString,
-      VTTemp.fieldbyname('联机号').AsString,
-      VTTemp.fieldbyname('样本类型').AsString,
-      VTTemp.fieldbyname('LIS项目代码').AsString,
-      '',
+      DBGrid1.DataSource.DataSet.fieldbyname('外部系统项目申请编号').AsString,
+      DBGrid1.DataSource.DataSet.fieldbyname('联机号').AsString,
+      DBGrid1.DataSource.DataSet.fieldbyname('样本类型').AsString,
+      DBGrid1.DataSource.DataSet.fieldbyname('LIS项目代码').AsString,
+      LabeledEdit9.Text,
       operator_name
     );
 
     //保存当前联机号
-    if (trim(VTTemp.fieldbyname('工作组').AsString)<>'')and(VTTemp.fieldbyname('工作组').AsString<>PreWorkGroup) then
+    if (trim(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString)<>'')and(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString<>PreWorkGroup) then
     begin
-      PreWorkGroup:=VTTemp.fieldbyname('工作组').AsString;
+      PreWorkGroup:=DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString;
       ini:=tinifile.Create(ChangeFileExt(Application.ExeName,'.ini'));
-      ini.WriteString(VTTemp.fieldbyname('工作组').AsString,'检查日期',FormatDateTime('YYYY-MM-DD',Date));
-      ini.WriteString(VTTemp.fieldbyname('工作组').AsString,'联机号',VTTemp.fieldbyname('联机号').AsString);
+      ini.WriteString(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,'检查日期',FormatDateTime('YYYY-MM-DD',Date));
+      ini.WriteString(DBGrid1.DataSource.DataSet.fieldbyname('工作组').AsString,'联机号',DBGrid1.DataSource.DataSet.fieldbyname('联机号').AsString);
       ini.Free;
     end;
     //==============
-
-    VTTemp.Next;
   end;
-  VTTemp.Close;
-  VTTemp.Free;
+  DBGrid1.DataSource.DataSet.GotoBookmark(OldCurrent);
+  DBGrid1.DataSource.DataSet.EnableControls;
+  //Grid勾选记录判断方式二 end}
 
   LabeledEdit1.Enabled:=true;
   if LabeledEdit1.CanFocus then LabeledEdit1.SetFocus; 

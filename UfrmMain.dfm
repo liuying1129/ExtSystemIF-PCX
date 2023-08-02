@@ -1,11 +1,11 @@
 object frmMain: TfrmMain
-  Left = 269
-  Top = 127
+  Left = 189
+  Top = 122
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #26465#30721#25195#25551' - '#23545#25509'PCX-HIS'
   ClientHeight = 467
-  ClientWidth = 690
+  ClientWidth = 791
   Color = clBtnFace
   Font.Charset = ANSI_CHARSET
   Font.Color = clWindowText
@@ -23,7 +23,7 @@ object frmMain: TfrmMain
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 690
+    Width = 791
     Height = 41
     Align = alTop
     TabOrder = 0
@@ -64,7 +64,7 @@ object frmMain: TfrmMain
   object GroupBox1: TGroupBox
     Left = 0
     Top = 41
-    Width = 690
+    Width = 791
     Height = 407
     Align = alClient
     Caption = #26465#30721#20449#24687
@@ -72,7 +72,7 @@ object frmMain: TfrmMain
     object Panel3: TPanel
       Left = 2
       Top = 15
-      Width = 686
+      Width = 787
       Height = 58
       Align = alTop
       TabOrder = 0
@@ -174,9 +174,9 @@ object frmMain: TfrmMain
         Height = 21
         TabStop = False
         Color = clMenu
-        EditLabel.Width = 39
+        EditLabel.Width = 85
         EditLabel.Height = 13
-        EditLabel.Caption = #20307#26816#21495
+        EditLabel.Caption = #20303#38498#21495'/'#20307#26816#21495
         ReadOnly = True
         TabOrder = 7
       end
@@ -196,14 +196,27 @@ object frmMain: TfrmMain
         ReadOnly = True
         TabOrder = 8
       end
+      object LabeledEdit9: TLabeledEdit
+        Left = 682
+        Top = 26
+        Width = 60
+        Height = 21
+        TabStop = False
+        Color = clMenu
+        EditLabel.Width = 52
+        EditLabel.Height = 13
+        EditLabel.Caption = #30149#20154#31867#21035
+        ReadOnly = True
+        TabOrder = 9
+      end
     end
     object Panel4: TPanel
       Left = 2
       Top = 372
-      Width = 686
+      Width = 787
       Height = 33
       Align = alBottom
-      TabOrder = 2
+      TabOrder = 1
       object Label1: TLabel
         Left = 152
         Top = 3
@@ -227,36 +240,38 @@ object frmMain: TfrmMain
         OnClick = BitBtn1Click
       end
     end
-    object DBGrid1: TDBGrid
-      Left = 2
-      Top = 162
-      Width = 686
-      Height = 210
-      TabStop = False
-      Align = alClient
-      DataSource = DataSource1
-      TabOrder = 1
-      TitleFont.Charset = ANSI_CHARSET
-      TitleFont.Color = clWindowText
-      TitleFont.Height = -13
-      TitleFont.Name = #23435#20307
-      TitleFont.Style = []
-    end
     object Memo1: TMemo
       Left = 2
       Top = 73
-      Width = 686
+      Width = 787
       Height = 89
       Align = alTop
       Color = clMenu
       ReadOnly = True
+      TabOrder = 2
+    end
+    object DBGrid1: TDBGridEh
+      Left = 2
+      Top = 162
+      Width = 787
+      Height = 210
+      TabStop = False
+      Align = alClient
+      AllowedSelections = [gstRecordBookmarks, gstRectangle, gstColumns]
+      DataSource = DataSource1
+      DynProps = <>
+      IndicatorOptions = [gioShowRowIndicatorEh, gioShowRowselCheckboxesEh]
+      Options = [dgEditing, dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgConfirmDelete, dgCancelOnExit, dgMultiSelect]
+      OptionsEh = [dghFixed3D, dghHighlightFocus, dghDialogFind, dghColumnResize, dghColumnMove, dghExtendVertLines]
       TabOrder = 3
+      object RowDetailData: TRowDetailPanelControlEh
+      end
     end
   end
   object StatusBar1: TStatusBar
     Left = 0
     Top = 448
-    Width = 690
+    Width = 791
     Height = 19
     Panels = <
       item
